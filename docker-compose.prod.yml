@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  web:
+    container_name: django-prod
+    build:
+      context: ./app
+      dockerfile: Dockerfile.prod
+    command: gunicorn hello_django.wsgi:application --bind 0.0.0.0:8000
+    expose:
+        - 8000
+    env_file:
+      - ./.env.prod
+    volumes:
+      - static_volume:/home/app/web/staticfiles
+      - media_volume:/home/app/web/mediafiles
+      - ./app/:/home/app/web/
+    depends_on:
+      - db
+    networks:
+      - django_network
+
+  db:
+    container_name: db-prod
+    image: postgres:13.0-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env.prod.db
+    networks:
+      - django_network
+
+  nginx:
+    container_name: nginx-prod
+    build: ./nginx
+    ports:
+      - 1337:80
+    depends_on:
+      - web
+    volumes:
+      - static_volume:/home/app/web/staticfiles
+      - media_volume:/home/app/web/mediafiles
+    networks:
+      - django_network
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
+# It is not necessary to define network here.
+
+# The default network is created with the directory name as prefix.
+# When we run docker compose up --build locally a default network is created.
+# Then I run prod docker compose -f docker-compose.prod.yml up --build then it will use existing default network.
+# But if I have removed network using docker compose down -v then on build prod I will get an error (network not found with some id).
+
+networks:
+  django_network:
+    name: custom_network
