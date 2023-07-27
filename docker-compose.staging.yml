@@ -5,6 +5,7 @@ services:
     build:
       context: ./app
       dockerfile: Dockerfile.prod
+    image: 459483594615.dkr.ecr.ap-south-1.amazonaws.com/django-ec2:web
     command: gunicorn hello_django.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - static_volume:/home/app/web/staticfiles
@@ -24,6 +25,7 @@ services:
   nginx-proxy:
     container_name: nginx-proxy
     build: nginx
+    image: 459483594615.dkr.ecr.ap-south-1.amazonaws.com/django-ec2:nginx-proxy
     restart: always
     ports:
       - 443:443
@@ -38,6 +40,8 @@ services:
     depends_on:
       - web
   nginx-proxy-letsencrypt:
+  # letsencrypt-nginx-proxy-companion - used to issue and renew Let's Encrypt SSL certificates,
+  # for each of the containers proxied by nginx-proxy
     image: jrcs/letsencrypt-nginx-proxy-companion
     env_file:
       - ./.env.staging.proxy-companion
